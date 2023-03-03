@@ -104,7 +104,7 @@ const App = () => {
           animate: (phase) => {
             // Interpolate camera position while keeping focus on a target lat/lng
             const cameraPosition = lerp([175.6039, -39.1185], [175.5925, -39.1253], phase);
-            const cameraAltitude = lerp(cameraStartAltitude, cameraStartAltitude-1000, phase);
+            const cameraAltitude = lerp(cameraStartAltitude, cameraStartAltitude+1000, phase);
             const cameraBearing = lerp(cameraStartBearing, 0, phase);
             const cameraPitch = lerp(cameraStartPitch, 0, phase);
             const cameraTarget = [175.6320, -39.1568];
@@ -116,7 +116,7 @@ const App = () => {
           animate: (phase) => {
             // Interpolate camera position while keeping focus on a target lat/lng
             const cameraPosition = lerp([175.5925, -39.1253], [175.5837, -39.1342], phase);
-            const cameraAltitude = lerp(cameraStartAltitude-1000, cameraStartAltitude-1000, phase);
+            const cameraAltitude = lerp(cameraStartAltitude+1000, cameraStartAltitude+1000, phase);
             const cameraBearing = lerp(cameraStartBearing, 0, phase);
             const cameraPitch = lerp(cameraStartPitch, 0, phase);
             const cameraTarget = [175.6320, -39.1568];
@@ -128,7 +128,7 @@ const App = () => {
           animate: (phase) => {
             // Interpolate camera position while keeping focus on a target lat/lng
             const cameraPosition = lerp([175.5837, -39.1342], [175.5782, -39.1445], phase);
-            const cameraAltitude = lerp(cameraStartAltitude-1000, cameraStartAltitude+400, phase);
+            const cameraAltitude = lerp(cameraStartAltitude+1000, cameraStartAltitude+400, phase);
             const cameraBearing = lerp(cameraStartBearing, 0, phase);
             const cameraPitch = lerp(cameraStartPitch, 0, phase);
             const cameraTarget = [175.6320, -39.1568];
