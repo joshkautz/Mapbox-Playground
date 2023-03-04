@@ -19,25 +19,25 @@ const App = () => {
     if (map.current) return; // Initialize map only once
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      style: 'mapbox://styles/joshkautz/clesyuvgl004w01n0npa8ohk2',
       center: [lng, lat],
       zoom: zoom,
       pitch: pitch,
       bearing: bearing,
-      // interactive: false,
+      interactive: false,
     });
 
     map.current.on('style.load', () => {
-      map.current.setFog({}); // Set the default atmosphere style
+      // map.current.setFog({}); // Set the default atmosphere style
 
       // Add terrain
-      map.current.addSource('mapbox-dem', {
-        'type': 'raster-dem',
-        'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        'tileSize': 512,
-        'maxzoom': 14,
-      });
-      map.current.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
+      // map.current.addSource('mapbox-dem', {
+      //   'type': 'raster-dem',
+      //   'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+      //   'tileSize': 512,
+      //   'maxzoom': 14,
+      // });
+      // map.current.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
     });
 
     let animationIndex = 0;
@@ -398,8 +398,8 @@ const App = () => {
   useEffect(() => {
     if (!map.current) return; // wait for map to initialize
     map.current.on('move', () => {
-      setLng(map.current.getCenter().lng);
-      setLat(map.current.getCenter().lat);
+      setLng(map.current.getCenter().lng.toFixed(4));
+      setLat(map.current.getCenter().lat.toFixed(4));
       setPitch(map.current.getPitch().toFixed(4));
       setZoom(map.current.getZoom().toFixed(2));
       setBearing(map.current.getBearing().toFixed(2));
