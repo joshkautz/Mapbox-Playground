@@ -1,6 +1,7 @@
 import React, {useRef, useEffect, useState} from 'react';
-import mapboxgl from '!mapbox-gl';
 import geojson from './Example2-geojson.json';
+import mapboxgl from 'mapbox-gl';
+import {saveAs} from 'file-saver';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGthdXR6IiwiYSI6ImNsYW1uYmM0ODBndmczcHFycjQ2b3htNHMifQ.Ijorv-ALBKlH-UN3nLGl7Q';
 
@@ -40,8 +41,46 @@ const Example2 = () => {
       setCamLat(map.current.getFreeCameraOptions().position.toLngLat().lat.toFixed(4));
     });
 
-    map.current.on('load', () => {
-      console.log(geojson);
+    const DURATION = 10000;
+
+    map.current.on('load', async () => {
+      const animate = async () => {
+        // Animate Camera
+        map.current.easeTo({
+          bearing: map.current.getBearing() - 20,
+          duration: DURATION,
+          easing: (t) => t,
+        });
+
+        // Animate Route
+        let startTime;
+        const frame = (time) => {
+          if (!startTime) startTime = time;
+          const animationPhase = (time - startTime) / DURATION;
+
+          // Reduce the visible length of the line by using a line-gradient to cutoff the line
+          // animationPhase is a value between 0 and 1 that reprents the progress of the animation
+          map.current.setPaintProperty(
+              'CDT',
+              'line-gradient', [
+                'step',
+                ['line-progress'],
+                'red',
+                animationPhase,
+                'rgba(0, 0, 0, 0)',
+              ]);
+
+          if (animationPhase > 1) {
+            return;
+          }
+          window.requestAnimationFrame(frame);
+        };
+
+        window.requestAnimationFrame(frame);
+
+        // Wait for animation to finish
+        await map.current.once('moveend');
+      };
 
       map.current.addSource('CDT', {
         type: 'geojson',
@@ -64,40 +103,26 @@ const Example2 = () => {
         },
       });
 
-      let startTime;
-      const duration = 30000;
+      await map.current.once('idle');
 
-      const frame = (time) => {
-        if (!startTime) startTime = time;
-        const animationPhase = (time - startTime) / duration;
-        // const animationPhaseDisplay = animationPhase.toFixed(2);
-        // $('#animation-phase').text(animationPhaseDisplay);
+      const chunks = [];
+      const canvas = map.current.getCanvas();
+      const videoStream = canvas.captureStream(30);
+      const mediaRecorder = new MediaRecorder(videoStream);
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        console.log(chunks);
+        const blob = new Blob(chunks);
+        console.log(blob);
 
-        // Reduce the visible length of the line by using a line-gradient to cutoff the line
-        // animationPhase is a value between 0 and 1 that reprents the progress of the animation
-        map.current.setPaintProperty(
-            'CDT',
-            'line-gradient', [
-              'step',
-              ['line-progress'],
-              'yellow',
-              animationPhase,
-              'rgba(0, 0, 0, 0)',
-            ]);
-
-        if (animationPhase > 1) {
-          return;
-        }
-        window.requestAnimationFrame(frame);
+        saveAs(blob, 'mapboxgl.webm');
       };
 
-      window.requestAnimationFrame(frame);
+      mediaRecorder.start();
 
-      // Repeat
-      setInterval(() => {
-        startTime = undefined;
-        window.requestAnimationFrame(frame);
-      }, duration + 1500);
+      await animate();
+
+      mediaRecorder.stop();
     });
   });
 
@@ -105,7 +130,7 @@ const Example2 = () => {
     <div>
       <div className="sidebar">
         Target Longitude: {lng} | Target Latitude: {lat} | Zoom: {zoom} | Pitch: {pitch} | Bearing: {bearing}<br />
-        Camera Longitude: {camLng} | Camera Latitude: {camLat} | Camera Altitude: {altitude}
+        Camera Longitude: {camLng} | Camera Latitude: {camLat} | Camera Altitude: {altitude}<br />
       </div>
       <div ref={mapContainer} className="map-container" />
     </div>
