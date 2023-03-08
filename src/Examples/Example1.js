@@ -3,7 +3,7 @@ import mapboxgl from '!mapbox-gl';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGthdXR6IiwiYSI6ImNsYW1uYmM0ODBndmczcHFycjQ2b3htNHMifQ.Ijorv-ALBKlH-UN3nLGl7Q';
 
-const App = () => {
+const Example1 = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [lng, setLng] = useState('175.6320');
@@ -420,4 +420,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Example1;
