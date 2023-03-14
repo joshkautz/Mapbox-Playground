@@ -7,6 +7,7 @@ import './index.css';
 import Examples from './Examples';
 import Example1 from './Examples/Example1/Example1';
 import Example2 from './Examples/Example2/Example2';
+import Example3 from './Examples/Example3/Example3';
 import reportWebVitals from './reportWebVitals';
 
 const router = createBrowserRouter([
@@ -24,7 +25,7 @@ const router = createBrowserRouter([
         element: <Example2 />,
       }, {
         path: 'example-3',
-        element: null,
+        element: <Example3 />,
       }, {
         path: 'example-4',
         element: null,
