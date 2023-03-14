@@ -18,11 +18,32 @@ const Examples = () => {
           Exports video automatically. Uses custom style from Mapbox Studio.
         </li>
         <li>
-          <Link to='/example-3'>Example 3</Link> - Continental Divide Trail, non-interactive map. Animated camera and animated GeoJSON layer for the hiking trail.
-          Exports video with buttons.
+          <Link to='/example-3'>Example 3</Link> - Continental Divide Trail. Animated GeoJSON layer (using setPaintProperty line-gradient).
+          <ul>
+            <li>
+          Buttons for starting recording with Camera Animation and Layer Animation.
+            </li>
+            <li>
+          Buttons for stopping recording.
+            </li>
+            <li>
+          Buttons for exporting video.
+            </li>
+          </ul>
         </li>
         <li>
-          <Link to='/example-4'>Example 4</Link> - Continental Divide Trail, non-interactive map.Animates and camera and route a different way.
+          <Link to='/example-4'>Example 4</Link> - Continental Divide Trail. Animated GeoJSON layer (but in a different way...).
+          <ul>
+            <li>
+          Buttons for starting recording with Camera Animation and Layer Animation.
+            </li>
+            <li>
+          Buttons for stopping recording.
+            </li>
+            <li>
+          Buttons for exporting video.
+            </li>
+          </ul>
         </li>
         <li>
           <Link to='/example-5'>Example 5</Link> - Continental Divide Trail, non-interactive map.Animates and camera and route a different way. Adds video export the way that
