@@ -1,4 +1,4 @@
-import React, {useRef, useEffect, useState} from 'react';
+import React, {useRef, useEffect, useState, useCallback} from 'react';
 import geojson from './Example3-geojson.json';
 import mapboxgl from 'mapbox-gl';
 import {saveAs} from 'file-saver';
@@ -14,6 +14,8 @@ const initCamLng = '-108.3534';
 const initCamLat = '26.1167';
 const initCamAltitude = '4026879.6999';
 const DURATION = 10000;
+let blob = undefined;
+let mediaRecorder = undefined;
 
 const Example3 = () => {
   const mapContainer = useRef(null);
@@ -27,14 +29,20 @@ const Example3 = () => {
   const [camLat, setCamLat] = useState(initCamLat);
   const [altitude, setAltitude] = useState(initCamAltitude);
 
-  const resetCamera = () => {
-    map.current.jumpTo({
-      center: [initLng, initLat],
-      zoom: initZoom,
-      pitch: initPitch,
-      bearing: initBearing,
+  const [isRecorded, setIsRecorded] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const startCameraAnimation = useCallback(() => {
+    map.current.easeTo({
+      bearing: map.current.getBearing() - 90,
+      duration: DURATION,
+      easing: (t) => t,
     });
-  };
+  }, []);
+
+  const stopCameraAnimation = useCallback(() => {
+    map.current.stop();
+  }, []);
 
   const animateRoute = () => {
     let startTime;
@@ -63,29 +71,21 @@ const Example3 = () => {
     window.requestAnimationFrame(frame);
   };
 
-  const animateCamera = () => {
-    map.current.easeTo({
-      bearing: map.current.getBearing() - 90,
-      duration: DURATION,
-      easing: (t) => t,
-    });
-  };
-
-  const createMediaRecorder = () => {
+  const createMediaRecorder = useCallback(() => {
+    blob = undefined;
+    setIsRecorded(false);
     const chunks = [];
     const canvas = map.current.getCanvas();
     const videoStream = canvas.captureStream(30);
-    const mediaRecorder = new MediaRecorder(videoStream);
+    mediaRecorder = new MediaRecorder(videoStream);
     mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
     mediaRecorder.onstop = async () => {
-      const blob = new Blob(chunks);
-      saveAs(blob, 'mapboxgl.webm');
+      blob = new Blob(chunks);
+      setIsRecorded(true);
     };
+  }, []);
 
-    return mediaRecorder;
-  };
-
-  const recordCanvas = async () => {
+  const disableInteraction = useCallback(() => {
     map.current.boxZoom.disable();
     map.current.doubleClickZoom.disable();
     map.current.dragPan.disable();
@@ -93,31 +93,87 @@ const Example3 = () => {
     map.current.keyboard.disable();
     map.current.scrollZoom.disable();
     map.current.touchZoomRotate.disable();
+  }, []);
+
+  const enableInteraction = useCallback(() => {
+    map.current.boxZoom.enable();
+    map.current.doubleClickZoom.enable();
+    map.current.dragPan.enable();
+    map.current.dragRotate.enable();
+    map.current.keyboard.enable();
+    map.current.scrollZoom.enable();
+    map.current.touchZoomRotate.enable();
+  }, []);
+
+  const exportVideo = useCallback(() => {
+    saveAs(blob, 'mapboxgl.webm');
+  }, []);
+
+  const resetCamera = useCallback(() => {
+    map.current.jumpTo({
+      center: [initLng, initLat],
+      zoom: initZoom,
+      pitch: initPitch,
+      bearing: initBearing,
+    });
+  }, []);
+
+  const startRecording = useCallback(() => {
+    setIsRecording(true);
+    mediaRecorder.start();
+  });
+
+  const stopRecording = useCallback(() => {
+    mediaRecorder.stop();
+    setIsRecording(false);
+  });
+
+
+  const recordCanvas = async () => {
+    // Disable user interactions on Mapbox
+    disableInteraction();
 
     // Reset Media Recorder
-    const mediaRecorder = createMediaRecorder();
+    createMediaRecorder();
 
     // Reset Camera
     resetCamera();
 
     // Start Camera animation
-    animateCamera();
+    startCameraAnimation();
 
     // Start Route animation
     animateRoute();
 
     // Start recording canvas
-    mediaRecorder.start();
+    startRecording();
 
     // Wait for Camera animation to stop
     await map.current.once('moveend');
 
     // Stop recording canvas
-    mediaRecorder.stop();
+    stopRecording();
+
+    // Enable user interactions on Mapbox
+    enableInteraction();
   };
 
+  const updateUIValues = useCallback(() => {
+    setLng(map.current.getCenter().lng.toFixed(4));
+    setLat(map.current.getCenter().lat.toFixed(4));
+    setPitch(map.current.getPitch().toFixed(4));
+    setZoom(map.current.getZoom().toFixed(2));
+    setBearing(map.current.getBearing().toFixed(2));
+    setAltitude(map.current.getFreeCameraOptions().position.toAltitude().toFixed(4));
+    setCamLng(map.current.getFreeCameraOptions().position.toLngLat().lng.toFixed(4));
+    setCamLat(map.current.getFreeCameraOptions().position.toLngLat().lat.toFixed(4));
+  }, []);
+
   useEffect(() => {
-    if (map.current) return; // Initialize map only once
+    // Initialize map only once
+    if (map.current) {
+      return;
+    }
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -130,14 +186,7 @@ const Example3 = () => {
     });
 
     map.current.on('move', () => {
-      setLng(map.current.getCenter().lng.toFixed(4));
-      setLat(map.current.getCenter().lat.toFixed(4));
-      setPitch(map.current.getPitch().toFixed(4));
-      setZoom(map.current.getZoom().toFixed(2));
-      setBearing(map.current.getBearing().toFixed(2));
-      setAltitude(map.current.getFreeCameraOptions().position.toAltitude().toFixed(4));
-      setCamLng(map.current.getFreeCameraOptions().position.toLngLat().lng.toFixed(4));
-      setCamLat(map.current.getFreeCameraOptions().position.toLngLat().lat.toFixed(4));
+      updateUIValues();
     });
 
     map.current.on('load', async () => {
@@ -167,14 +216,17 @@ const Example3 = () => {
       // Start Route animation
       animateRoute();
     });
-  });
+  }, []);
 
   return (
     <div>
       <div className="sidebar">
         Target Longitude: {lng} | Target Latitude: {lat} | Zoom: {zoom} | Pitch: {pitch} | Bearing: {bearing}<br />
         Camera Longitude: {camLng} | Camera Latitude: {camLat} | Camera Altitude: {altitude}<br />
+        <br />
         <button type="button" onClick={recordCanvas}>Record Canvas</button>
+        <button type="button" disabled={!isRecorded} onClick={exportVideo}>Export Video</button>
+        <button type="button" disabled={!isRecording} onClick={stopCameraAnimation}>Stop Recording</button>
 
       </div>
       <div ref={mapContainer} className="map-container" />
