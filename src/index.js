@@ -5,8 +5,8 @@ import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './index.css';
 import Examples from './Examples';
-import Example1 from './Examples/Example1';
-import Example2 from './Examples/Example2';
+import Example1 from './Examples/Example1/Example1';
+import Example2 from './Examples/Example2/Example2';
 import reportWebVitals from './reportWebVitals';
 
 const router = createBrowserRouter([
@@ -22,6 +22,15 @@ const router = createBrowserRouter([
       }, {
         path: 'example-2',
         element: <Example2 />,
+      }, {
+        path: 'example-3',
+        element: null,
+      }, {
+        path: 'example-4',
+        element: null,
+      }, {
+        path: 'example-5',
+        element: null,
       },
     ],
   },
