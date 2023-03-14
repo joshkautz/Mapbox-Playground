@@ -65,7 +65,7 @@ const Example3 = () => {
 
   const animateCamera = () => {
     map.current.easeTo({
-      bearing: map.current.getBearing() - 20,
+      bearing: map.current.getBearing() - 90,
       duration: DURATION,
       easing: (t) => t,
     });
@@ -164,9 +164,6 @@ const Example3 = () => {
     });
 
     map.current.on('idle', async () => {
-      // Start Camera animation
-      animateCamera();
-
       // Start Route animation
       animateRoute();
     });
