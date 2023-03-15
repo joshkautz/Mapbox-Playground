@@ -8,6 +8,8 @@ import Examples from './Examples';
 import Example1 from './Examples/Example1/Example1';
 import Example2 from './Examples/Example2/Example2';
 import Example3 from './Examples/Example3/Example3';
+import Example4 from './Examples/Example4/Example4';
+import Example5 from './Examples/Example5/Example5';
 import reportWebVitals from './reportWebVitals';
 
 const router = createBrowserRouter([
@@ -28,10 +30,10 @@ const router = createBrowserRouter([
         element: <Example3 />,
       }, {
         path: 'example-4',
-        element: null,
+        element: <Example4 />,
       }, {
         path: 'example-5',
-        element: null,
+        element: <Example5 />,
       },
     ],
   },

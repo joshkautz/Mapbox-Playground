@@ -46,8 +46,7 @@ const Examples = () => {
           </ul>
         </li>
         <li>
-          <Link to='/example-5'>Example 5</Link> - Continental Divide Trail, non-interactive map.Animates and camera and route a different way. Adds video export the way that
-          Mapbox successfully demonstrates.
+          <Link to='/example-5'>Example 5</Link> - Example for making Headless Video Recorder script.
         </li>
       </ul>
     </>
