@@ -1,7 +1,7 @@
 import React, {useRef, useEffect, useState, useCallback} from 'react';
 import geojson from './Example4-geojson.json';
 import mapboxgl from 'mapbox-gl';
-import {saveAs} from 'file-saver';
+import {add3D, addTrail, flyInAndRotate} from './scripts';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGthdXR6IiwiYSI6ImNsYW1uYmM0ODBndmczcHFycjQ2b3htNHMifQ.Ijorv-ALBKlH-UN3nLGl7Q';
 
@@ -13,9 +13,7 @@ const initBearing = '0.00';
 const initCamLng = '-108.3534';
 const initCamLat = '26.1167';
 const initCamAltitude = '4026879.6999';
-const DURATION = 10000;
-let blob = undefined;
-let mediaRecorder = undefined;
+const DURATION = 60000;
 
 const Example3 = () => {
   const mapContainer = useRef(null);
@@ -29,10 +27,14 @@ const Example3 = () => {
   const [camLat, setCamLat] = useState(initCamLat);
   const [altitude, setAltitude] = useState(initCamAltitude);
 
-  const [isRecorded, setIsRecorded] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-
   const startCameraAnimation = useCallback(() => {
+    map.current.jumpTo({
+      center: [initLng, initLat],
+      zoom: initZoom,
+      pitch: initPitch,
+      bearing: initBearing,
+    });
+
     map.current.easeTo({
       bearing: map.current.getBearing() - 90,
       duration: DURATION,
@@ -40,11 +42,11 @@ const Example3 = () => {
     });
   }, []);
 
-  const stopCameraAnimation = useCallback(() => {
-    map.current.stop();
-  }, []);
+  // const stopCameraAnimation = useCallback(() => {
+  //   map.current.stop();
+  // }, []);
 
-  const animateRoute = () => {
+  const startRouteAnimation = () => {
     let startTime;
     const frame = (time) => {
       if (!startTime) startTime = time;
@@ -71,19 +73,6 @@ const Example3 = () => {
     window.requestAnimationFrame(frame);
   };
 
-  const createMediaRecorder = useCallback(() => {
-    blob = undefined;
-    setIsRecorded(false);
-    const chunks = [];
-    const canvas = map.current.getCanvas();
-    const videoStream = canvas.captureStream(30);
-    mediaRecorder = new MediaRecorder(videoStream);
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-    mediaRecorder.onstop = async () => {
-      blob = new Blob(chunks);
-      setIsRecorded(true);
-    };
-  }, []);
 
   const disableInteraction = useCallback(() => {
     map.current.boxZoom.disable();
@@ -104,59 +93,6 @@ const Example3 = () => {
     map.current.scrollZoom.enable();
     map.current.touchZoomRotate.enable();
   }, []);
-
-  const exportVideo = useCallback(() => {
-    saveAs(blob, 'mapboxgl.webm');
-  }, []);
-
-  const resetCamera = useCallback(() => {
-    map.current.jumpTo({
-      center: [initLng, initLat],
-      zoom: initZoom,
-      pitch: initPitch,
-      bearing: initBearing,
-    });
-  }, []);
-
-  const startRecording = useCallback(() => {
-    setIsRecording(true);
-    mediaRecorder.start();
-  });
-
-  const stopRecording = useCallback(() => {
-    mediaRecorder.stop();
-    setIsRecording(false);
-  });
-
-
-  const recordCanvas = async () => {
-    // Disable user interactions on Mapbox
-    disableInteraction();
-
-    // Reset Media Recorder
-    createMediaRecorder();
-
-    // Reset Camera
-    resetCamera();
-
-    // Start Camera animation
-    startCameraAnimation();
-
-    // Start Route animation
-    animateRoute();
-
-    // Start recording canvas
-    startRecording();
-
-    // Wait for Camera animation to stop
-    await map.current.once('moveend');
-
-    // Stop recording canvas
-    stopRecording();
-
-    // Enable user interactions on Mapbox
-    enableInteraction();
-  };
 
   const updateUIValues = useCallback(() => {
     setLng(map.current.getCenter().lng.toFixed(4));
@@ -190,31 +126,48 @@ const Example3 = () => {
     });
 
     map.current.on('load', async () => {
-      map.current.addSource('CDT', {
-        type: 'geojson',
-        data: geojson,
-        lineMetrics: true,
-      });
+      // add 3d, sky and fog
+      add3D(map);
 
-      map.current.addLayer({
-        id: 'CDT',
-        type: 'line',
-        source: 'CDT',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': 'rgba(0,0,0,0)',
-          'line-width': 8,
-          'line-opacity': 0.5,
-        },
+      // add a geojson source and layer for the linestring to the map
+      addTrail(map, geojson);
+
+      // get the start of the linestring, to be used for animating a zoom-in from high altitude
+      const targetLngLat = {
+        lng: geojson.geometry.coordinates[0][0],
+        lat: geojson.geometry.coordinates[0][1],
+      };
+
+      // animate zooming in to the start point, get the final bearing and altitude for use in the next animation
+      // const { bearing, altitude } =
+      await flyInAndRotate({
+        map,
+        targetLngLat,
+        duration: 7000,
+        startAltitude: 3000000,
+        endAltitude: 12000,
+        startBearing: 0,
+        endBearing: -20,
+        startPitch: 40,
+        endPitch: 50,
       });
     });
 
     map.current.on('idle', async () => {
-      // Start Route animation
-      animateRoute();
+      // // Disable user interactions on Mapbox
+      // disableInteraction();
+
+      // // Start Camera animation
+      // startCameraAnimation();
+
+      // // Start Route animation
+      // startRouteAnimation();
+
+      // // Wait for Camera animation to stop
+      // await map.current.once('moveend');
+
+      // // Enable user interactions on Mapbox
+      // enableInteraction();
     });
   }, []);
 
@@ -223,11 +176,6 @@ const Example3 = () => {
       <div className="sidebar">
         Target Longitude: {lng} | Target Latitude: {lat} | Zoom: {zoom} | Pitch: {pitch} | Bearing: {bearing}<br />
         Camera Longitude: {camLng} | Camera Latitude: {camLat} | Camera Altitude: {altitude}<br />
-        <br />
-        <button type="button" onClick={recordCanvas}>Record Canvas</button>
-        <button type="button" disabled={!isRecorded} onClick={exportVideo}>Export Video</button>
-        <button type="button" disabled={!isRecording} onClick={stopCameraAnimation}>Stop Recording</button>
-
       </div>
       <div ref={mapContainer} className="map-container" />
     </div>

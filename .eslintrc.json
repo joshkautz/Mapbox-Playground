@@ -17,6 +17,8 @@
         "react"
     ],
     "rules": {
+        "no-unused-vars":"off",
+        "no-async-promise-executor": "off",
         "react/prop-types": "off",
         "linebreak-style": "off",
         "max-len": [
