@@ -1,19 +1,25 @@
 import React, {useRef, useEffect, useState, useCallback} from 'react';
-import geojson from './Example4-geojson.json';
+import geojson from './geojson.json';
 import mapboxgl from 'mapbox-gl';
-import {add3D, addTrail, flyInAndRotate} from './scripts';
+import {bbox} from '@turf/turf';
+
+import {add3D} from './scripts/add3D';
+import {addTrail} from './scripts/addTrail';
+import {flyInAndRotate} from './scripts/flyInAndRotate';
+import {animatePath} from './scripts/animatePath';
+import {fitBounds} from './scripts/fitBounds';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGthdXR6IiwiYSI6ImNsYW1uYmM0ODBndmczcHFycjQ2b3htNHMifQ.Ijorv-ALBKlH-UN3nLGl7Q';
 
-const initLng = '-108.35343933';
-const initLat = '41.63972855';
+const initLng = geojson.geometry.coordinates[0][0].toString();
+const initLat = geojson.geometry.coordinates[0][1].toString();
 const initZoom = '4.00';
 const initPitch = '25.0000';
 const initBearing = '0.00';
 const initCamLng = '-108.3534';
 const initCamLat = '26.1167';
 const initCamAltitude = '4026879.6999';
-const DURATION = 60000;
+const DURATION = 600000;
 
 const Example3 = () => {
   const mapContainer = useRef(null);
@@ -27,82 +33,15 @@ const Example3 = () => {
   const [camLat, setCamLat] = useState(initCamLat);
   const [altitude, setAltitude] = useState(initCamAltitude);
 
-  const startCameraAnimation = useCallback(() => {
-    map.current.jumpTo({
-      center: [initLng, initLat],
-      zoom: initZoom,
-      pitch: initPitch,
-      bearing: initBearing,
-    });
-
-    map.current.easeTo({
-      bearing: map.current.getBearing() - 90,
-      duration: DURATION,
-      easing: (t) => t,
-    });
-  }, []);
-
-  // const stopCameraAnimation = useCallback(() => {
-  //   map.current.stop();
-  // }, []);
-
-  const startRouteAnimation = () => {
-    let startTime;
-    const frame = (time) => {
-      if (!startTime) startTime = time;
-      const animationPhase = (time - startTime) / DURATION;
-
-      // Reduce the visible length of the line by using a line-gradient to cutoff the line
-      // animationPhase is a value between 0 and 1 that reprents the progress of the animation
-      map.current.setPaintProperty(
-          'CDT',
-          'line-gradient', [
-            'step',
-            ['line-progress'],
-            'red',
-            animationPhase,
-            'rgba(0, 0, 0, 0)',
-          ]);
-
-      if (animationPhase > 1) {
-        return;
-      }
-      window.requestAnimationFrame(frame);
-    };
-
-    window.requestAnimationFrame(frame);
-  };
-
-
-  const disableInteraction = useCallback(() => {
-    map.current.boxZoom.disable();
-    map.current.doubleClickZoom.disable();
-    map.current.dragPan.disable();
-    map.current.dragRotate.disable();
-    map.current.keyboard.disable();
-    map.current.scrollZoom.disable();
-    map.current.touchZoomRotate.disable();
-  }, []);
-
-  const enableInteraction = useCallback(() => {
-    map.current.boxZoom.enable();
-    map.current.doubleClickZoom.enable();
-    map.current.dragPan.enable();
-    map.current.dragRotate.enable();
-    map.current.keyboard.enable();
-    map.current.scrollZoom.enable();
-    map.current.touchZoomRotate.enable();
-  }, []);
-
   const updateUIValues = useCallback(() => {
-    setLng(map.current.getCenter().lng.toFixed(4));
-    setLat(map.current.getCenter().lat.toFixed(4));
-    setPitch(map.current.getPitch().toFixed(4));
-    setZoom(map.current.getZoom().toFixed(2));
-    setBearing(map.current.getBearing().toFixed(2));
-    setAltitude(map.current.getFreeCameraOptions().position.toAltitude().toFixed(4));
-    setCamLng(map.current.getFreeCameraOptions().position.toLngLat().lng.toFixed(4));
-    setCamLat(map.current.getFreeCameraOptions().position.toLngLat().lat.toFixed(4));
+    setLng(map.current.getCenter().lng);
+    setLat(map.current.getCenter().lat);
+    setPitch(map.current.getPitch());
+    setZoom(map.current.getZoom());
+    setBearing(map.current.getBearing());
+    setAltitude(map.current.getFreeCameraOptions().position.toAltitude());
+    setCamLng(map.current.getFreeCameraOptions().position.toLngLat().lng);
+    setCamLat(map.current.getFreeCameraOptions().position.toLngLat().lat);
   }, []);
 
   useEffect(() => {
@@ -118,7 +57,7 @@ const Example3 = () => {
       zoom: zoom,
       pitch: pitch,
       bearing: bearing,
-      interactive: true,
+      // interactive: false,
     });
 
     map.current.on('move', () => {
@@ -132,6 +71,8 @@ const Example3 = () => {
       // add a geojson source and layer for the linestring to the map
       addTrail(map, geojson);
 
+      await map.current.once('idle');
+
       // get the start of the linestring, to be used for animating a zoom-in from high altitude
       const targetLngLat = {
         lng: geojson.geometry.coordinates[0][0],
@@ -139,36 +80,64 @@ const Example3 = () => {
       };
 
       // animate zooming in to the start point, get the final bearing and altitude for use in the next animation
-      // const { bearing, altitude } =
       await flyInAndRotate({
         map,
         targetLngLat,
-        duration: 7000,
-        startAltitude: 3000000,
-        endAltitude: 12000,
-        startBearing: 0,
-        endBearing: -20,
-        startPitch: 40,
-        endPitch: 50,
+        duration: 3000,
+        startAltitude: parseFloat(map.current.getFreeCameraOptions().position.toAltitude()),
+        endAltitude: 50000,
+        startBearing: parseFloat(map.current.getBearing()),
+        endBearing: 0,
+        startPitch: parseFloat(map.current.getPitch()),
+        endPitch: 60,
+      });
+
+      // follow the path while slowly rotating the camera, passing in the camera bearing and altitude from the previous animation
+      await animatePath({
+        map,
+        duration: DURATION,
+        path: geojson,
+        startBearing: parseFloat(map.current.getBearing()),
+        startAltitude: parseFloat(map.current.getFreeCameraOptions().position.toAltitude()),
+        pitch: 60,
+      });
+
+      // get the bounds of the linestring, use fitBounds() to animate to a final view
+      await fitBounds(map, bbox(geojson), {
+        duration: 3000,
+        pitch: 30,
+        bearing: 0,
+        padding: 120,
       });
     });
 
-    map.current.on('idle', async () => {
-      // // Disable user interactions on Mapbox
-      // disableInteraction();
+    // map.current.on('data', async () => {
+    //   console.log('data');
+    // });
 
-      // // Start Camera animation
-      // startCameraAnimation();
+    // map.current.on('styledata', async () => {
+    //   console.log('styledata');
+    // });
 
-      // // Start Route animation
-      // startRouteAnimation();
+    // map.current.on('sourcedata', async () => {
+    //   console.log('sourcedata');
+    // });
 
-      // // Wait for Camera animation to stop
-      // await map.current.once('moveend');
+    // map.current.on('dataloading', async () => {
+    //   console.log('dataloading');
+    // });
 
-      // // Enable user interactions on Mapbox
-      // enableInteraction();
-    });
+    // map.current.on('styledataloading', async () => {
+    //   console.log('styledataloading');
+    // });
+
+    // map.current.on('sourcedataloading', async () => {
+    //   console.log('sourcedataloading');
+    // });
+
+    // map.current.on('styleimagemissing', async () => {
+    //   console.log('styleimagemissing');
+    // });
   }, []);
 
   return (

@@ -111,10 +111,7 @@ const Example2 = () => {
       const mediaRecorder = new MediaRecorder(videoStream);
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
       mediaRecorder.onstop = async () => {
-        console.log(chunks);
         const blob = new Blob(chunks);
-        console.log(blob);
-
         saveAs(blob, 'mapboxgl.webm');
       };
 

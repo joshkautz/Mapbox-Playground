@@ -1,8 +1,7 @@
 {
   "type": "Feature",
-  "id": "pw312bv3382.1",
   "geometry": {
-    "type": "MultiLineString",
+    "type": "LineString",
     "coordinates": 
       [
         [
@@ -17494,20 +17493,5 @@
           49.00041199
         ]
       ]
-  },
-  "geometry_name": "geom",
-  "properties": {
-    "fnode_": 1,
-    "tnode_": 2,
-    "lpoly_": 0,
-    "rpoly_": 0,
-    "length": 5.841,
-    "condivl020": 1,
-    "bbox": [
-      -114.07723999,
-      46.01430893,
-      -112.2884903,
-      49.00041199
-    ]
   }
 }
