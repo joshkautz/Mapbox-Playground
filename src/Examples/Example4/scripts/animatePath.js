@@ -48,7 +48,7 @@ const animatePath = async ({
       );
 
       // slowly rotate the map at a constant rate
-      const bearing = startBearing - animationPhase * 2000.0;
+      const bearing = startBearing - animationPhase * 1000.0;
 
       // compute corrected camera ground position, so that he leading edge of the path is in view
       const correctedPosition = computeCameraPosition(

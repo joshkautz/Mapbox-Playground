@@ -1,5 +1,5 @@
 import React, {useRef, useEffect, useState, useCallback} from 'react';
-import geojson from './geojson.json';
+import geojson from './newgeojson.json';
 import mapboxgl from 'mapbox-gl';
 import {bbox} from '@turf/turf';
 
@@ -14,12 +14,12 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGthdXR6IiwiYSI6ImNsYW1uYmM0ODBndmczcHFyc
 const initLng = geojson.geometry.coordinates[0][0].toString();
 const initLat = geojson.geometry.coordinates[0][1].toString();
 const initZoom = '4.00';
-const initPitch = '25.0000';
+const initPitch = '45.0000';
 const initBearing = '0.00';
 const initCamLng = '-108.3534';
 const initCamLat = '26.1167';
 const initCamAltitude = '4026879.6999';
-const DURATION = 600000;
+const DURATION = 300000;
 
 const Example3 = () => {
   const mapContainer = useRef(null);
@@ -85,11 +85,11 @@ const Example3 = () => {
         targetLngLat,
         duration: 3000,
         startAltitude: parseFloat(map.current.getFreeCameraOptions().position.toAltitude()),
-        endAltitude: 50000,
+        endAltitude: 35000,
         startBearing: parseFloat(map.current.getBearing()),
-        endBearing: 0,
+        endBearing: 20,
         startPitch: parseFloat(map.current.getPitch()),
-        endPitch: 60,
+        endPitch: 50,
       });
 
       // follow the path while slowly rotating the camera, passing in the camera bearing and altitude from the previous animation
@@ -99,7 +99,7 @@ const Example3 = () => {
         path: geojson,
         startBearing: parseFloat(map.current.getBearing()),
         startAltitude: parseFloat(map.current.getFreeCameraOptions().position.toAltitude()),
-        pitch: 60,
+        pitch: parseFloat(map.current.getPitch()),
       });
 
       // get the bounds of the linestring, use fitBounds() to animate to a final view
@@ -110,42 +110,14 @@ const Example3 = () => {
         padding: 120,
       });
     });
-
-    // map.current.on('data', async () => {
-    //   console.log('data');
-    // });
-
-    // map.current.on('styledata', async () => {
-    //   console.log('styledata');
-    // });
-
-    // map.current.on('sourcedata', async () => {
-    //   console.log('sourcedata');
-    // });
-
-    // map.current.on('dataloading', async () => {
-    //   console.log('dataloading');
-    // });
-
-    // map.current.on('styledataloading', async () => {
-    //   console.log('styledataloading');
-    // });
-
-    // map.current.on('sourcedataloading', async () => {
-    //   console.log('sourcedataloading');
-    // });
-
-    // map.current.on('styleimagemissing', async () => {
-    //   console.log('styleimagemissing');
-    // });
   }, []);
 
   return (
     <div>
-      <div className="sidebar">
+      {/* <div className="sidebar">
         Target Longitude: {lng} | Target Latitude: {lat} | Zoom: {zoom} | Pitch: {pitch} | Bearing: {bearing}<br />
         Camera Longitude: {camLng} | Camera Latitude: {camLat} | Camera Altitude: {altitude}<br />
-      </div>
+      </div> */}
       <div ref={mapContainer} className="map-container" />
     </div>
   );
